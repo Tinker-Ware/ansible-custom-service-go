@@ -1,0 +1,107 @@
+---
+
+- name: Ensure git is installed
+  apt: name=git state=present
+  sudo: true
+
+- name: Ensure directory is there
+  file:
+    dest: "{{ item }}"
+    state: directory
+  sudo: true
+  sudo_user: "{{ user }}"
+  with_items:
+    - "{{ service_dir }}"
+    - "{{ go_path }}/src/github.com/tools/godep"
+
+- name: Clone service repo
+  git:
+    repo="https://github.com/Tinker-Ware/{{ item.name }}.git"
+    dest="{{ service_dir }}/{{ item.name }}"
+  sudo: true
+  sudo_user: "{{ user }}"
+  with_items: "{{ services }}"
+
+- name: Clone godep repo
+  git:
+    repo="https://github.com/tools/godep"
+    dest="{{ go_path }}/src/github.com/tools/godep"
+  sudo: true
+  sudo_user: "{{ user }}"
+  environment:
+    GOPATH: "{{ go_path }}"
+
+- name: Install godep
+  shell: /usr/local/go/bin/go install .
+  args:
+    chdir: "{{ go_path }}/src/github.com/tools/godep"
+  sudo: true
+  sudo_user: "{{ user }}"
+  environment:
+    GOPATH: "{{ go_path }}"
+
+- name: Get dependencies
+  shell: "{{ go_path }}/bin/godep get"
+  args:
+    chdir: "{{ service_dir }}/{{ item.name }}"
+  sudo: true
+  sudo_user: "{{ user }}"
+  environment:
+    GOPATH: "{{ go_path }}"
+    PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/go/bin:/usr/local/go/bin"
+  with_items: "{{ services }}"
+
+- name: Config file
+  copy:
+    content="{{ item | to_nice_yaml }}"
+    dest=/etc/{{ item.name }}.conf
+    owner="{{ user }}"
+    group="{{ group }}"
+    mode=644
+  sudo: true
+  with_items: "{{ services }}"
+
+- name: Yaml config file
+  lineinfile:
+    dest=/etc/{{ item.name }}.conf
+    line="---"
+    insertbefore=BOF
+    state=present
+  with_items: "{{ services }}"
+  sudo: true
+
+- name: Create go executable
+  shell: /usr/local/go/bin/go install
+  args:
+    chdir: "{{ service_dir }}/{{ item.name }}"
+  sudo: yes
+  sudo_user: "{{ user }}"
+  environment:
+    GOPATH: "{{ go_path }}"
+  with_items: "{{ services }}"
+
+- name: Start daemon
+  shell: "start-stop-daemon --start --quiet --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} &"
+  sudo: yes
+  with_items: "{{ services }}"
+  #command: nohup gh-service 0<&- &> /tmp/ghservice.log &
+
+  ###########
+  # TESTING #
+  ###########
+# - name: Get ginkgo for testing
+#   command: go get github.com/onsi/ginkgo/ginkgo
+#   sudo: yes
+#   sudo_user: "{{ user }}"
+
+# - name: Get gomega for testing
+#   command: go get github.com/onsi/gomega
+#   sudo: yes
+#   sudo_user: "{{ user }}"
+
+# - name: Test gh-service
+#   command: ginkgo -r
+#   args:
+#     chdir: "{{ service_dir }}"
+#   sudo: yes
+#   sudo_user: "{{ user }}"
