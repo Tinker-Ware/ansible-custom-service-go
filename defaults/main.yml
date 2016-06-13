@@ -1,0 +1,10 @@
+---
+service_dir: "{{ go_path | default(lookup('env', 'GOPATH')) }}/src/github.com/Tinker-Ware/"
+go_path: "{{ ansible_env.HOME }}/go"
+user: 'vagrant'
+group: 'vagrant'
+services:
+  stub-service:
+    client_id: 'our_id'
+    client_secret: 'our_secret'
+    service_port: 3336
