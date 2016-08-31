@@ -41,14 +41,14 @@
     GOPATH: "{{ go_path }}"
 
 - name: Get dependencies
-  shell: "{{ go_path }}/bin/godep get"
+  command: "{{ go_path }}/bin/godep get"
   args:
     chdir: "{{ service_dir }}/{{ item.name }}"
-  sudo: true
-  sudo_user: "{{ user }}"
   environment:
     GOPATH: "{{ go_path }}"
     PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/go/bin:/usr/local/go/bin"
+  sudo: true
+  sudo_user: "{{ user }}"
   with_items: "{{ services }}"
 
 - name: Config file
