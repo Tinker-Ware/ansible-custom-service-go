@@ -46,7 +46,7 @@
     chdir: "{{ service_dir }}/{{ item.name }}"
   environment:
     GOPATH: "{{ go_path }}"
-    PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/go/bin:/usr/local/go/bin"
+    PATH: "{{ ansible_env.PATH }}:/home/{{ user }}/go/bin:/usr/local/go/bin"
   sudo: true
   sudo_user: "{{ user }}"
   with_items: "{{ services }}"
