@@ -81,7 +81,7 @@
   with_items: "{{ services }}"
 
 - name: Start daemon
-  shell: "start-stop-daemon --start --quiet --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} > /tmp/service_{{ item.name }}.log 2>&1 &"
+  shell: "nohup start-stop-daemon --start --quiet --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} > /tmp/service_{{ item.name }}.log 2>&1 &"
   sudo: yes
   with_items: "{{ services }}"
   #command: nohup gh-service 0<&- &> /tmp/ghservice.log &
