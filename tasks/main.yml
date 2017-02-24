@@ -18,6 +18,7 @@
   git:
     repo="https://github.com/Tinker-Ware/{{ item.name }}.git"
     dest="{{ service_dir }}/{{ item.name }}"
+    update=yes
   sudo: true
   sudo_user: "{{ user }}"
   with_items: "{{ services }}"
