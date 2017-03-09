@@ -19,9 +19,12 @@
     repo="https://github.com/Tinker-Ware/{{ item.name }}.git"
     dest="{{ service_dir }}/{{ item.name }}"
     update=yes
+    force=yes
   sudo: true
   sudo_user: "{{ user }}"
   with_items: "{{ services }}"
+  tags:
+    - update_custom_service_repo
 
 - name: Clone godep repo
   git:
@@ -51,6 +54,8 @@
   sudo: true
   sudo_user: "{{ user }}"
   with_items: "{{ services }}"
+  tags:
+    - update_custom_service_repo
 
 - name: Config file
   copy:
@@ -61,6 +66,8 @@
     mode=644
   sudo: true
   with_items: "{{ services }}"
+  tags:
+    - update_custom_service_repo
 
 - name: Yaml config file
   lineinfile:
@@ -70,6 +77,8 @@
     state=present
   with_items: "{{ services }}"
   sudo: true
+  tags:
+    - update_custom_service_repo
 
 - name: Create go executable
   shell: /usr/local/go/bin/go install
@@ -80,12 +89,24 @@
   environment:
     GOPATH: "{{ go_path }}"
   with_items: "{{ services }}"
+  tags:
+    - update_custom_service_repo
 
-- name: Start daemon
-  shell: "nohup start-stop-daemon --start --quiet --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} > /tmp/service_{{ item.name }}.log 2>&1 &"
+- name: Kill existing daemons
+  shell: "nohup start-stop-daemon --stop --signal TERM --retry 5 --quiet --oknodo --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} >> /tmp/service_{{ item.name }}.log 2>&1 &"
   sudo: yes
   with_items: "{{ services }}"
-  #command: nohup gh-service 0<&- &> /tmp/ghservice.log &
+  tags:
+    - update_services
+    - update_custom_service_repo
+
+- name: Start daemon
+  shell: "nohup start-stop-daemon --start --quiet --make-pidfile --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} >> /tmp/service_{{ item.name }}.log 2>&1 &"
+  sudo: yes
+  with_items: "{{ services }}"
+  tags:
+    - update_services
+    - update_custom_service_repo
 
   ###########
   # TESTING #
