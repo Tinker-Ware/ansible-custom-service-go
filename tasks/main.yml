@@ -2,14 +2,14 @@
 
 - name: Ensure git is installed
   apt: name=git state=present
-  sudo: true
+  become: true
 
 - name: Ensure directory is there
   file:
     dest: "{{ item }}"
     state: directory
-  sudo: true
-  sudo_user: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
   with_items:
     - "{{ service_dir }}"
     - "{{ go_path }}/src/github.com/tools/godep"
@@ -20,8 +20,8 @@
     dest="{{ service_dir }}/{{ item.name }}"
     update=yes
     force=yes
-  sudo: true
-  sudo_user: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
   with_items: "{{ services }}"
   tags:
     - update_custom_service_repo
@@ -30,8 +30,8 @@
   git:
     repo="https://github.com/tools/godep"
     dest="{{ go_path }}/src/github.com/tools/godep"
-  sudo: true
-  sudo_user: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
   environment:
     GOPATH: "{{ go_path }}"
 
@@ -39,8 +39,8 @@
   shell: /usr/local/go/bin/go install .
   args:
     chdir: "{{ go_path }}/src/github.com/tools/godep"
-  sudo: true
-  sudo_user: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
   environment:
     GOPATH: "{{ go_path }}"
 
@@ -51,8 +51,8 @@
   environment:
     GOPATH: "{{ go_path }}"
     PATH: "{{ ansible_env.PATH }}:/home/{{ user }}/go/bin:/usr/local/go/bin"
-  sudo: true
-  sudo_user: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
   with_items: "{{ services }}"
   tags:
     - update_custom_service_repo
@@ -64,7 +64,7 @@
     owner="{{ user }}"
     group="{{ group }}"
     mode=644
-  sudo: true
+  become: true
   with_items: "{{ services }}"
   tags:
     - update_custom_service_repo
@@ -76,7 +76,7 @@
     insertbefore=BOF
     state=present
   with_items: "{{ services }}"
-  sudo: true
+  become: true
   tags:
     - update_custom_service_repo
 
@@ -84,8 +84,8 @@
   shell: /usr/local/go/bin/go install
   args:
     chdir: "{{ service_dir }}/{{ item.name }}"
-  sudo: yes
-  sudo_user: "{{ user }}"
+  become: yes
+  become_user: "{{ user }}"
   environment:
     GOPATH: "{{ go_path }}"
   with_items: "{{ services }}"
@@ -94,7 +94,7 @@
 
 - name: Kill existing daemons
   shell: "nohup start-stop-daemon --stop --signal TERM --retry 5 --quiet --oknodo --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} >> /tmp/service_{{ item.name }}.log 2>&1 &"
-  sudo: yes
+  become: yes
   with_items: "{{ services }}"
   tags:
     - update_services
@@ -102,7 +102,7 @@
 
 - name: Start daemon
   shell: "nohup start-stop-daemon --start --quiet --make-pidfile --pidfile /var/run/{{ item.name }}.pid --exec /home/{{ user }}/go/bin/{{ item.name }} >> /tmp/service_{{ item.name }}.log 2>&1 &"
-  sudo: yes
+  become: yes
   with_items: "{{ services }}"
   tags:
     - update_services
@@ -113,17 +113,17 @@
   ###########
 # - name: Get ginkgo for testing
 #   command: go get github.com/onsi/ginkgo/ginkgo
-#   sudo: yes
-#   sudo_user: "{{ user }}"
+#   become: yes
+#   become_user: "{{ user }}"
 
 # - name: Get gomega for testing
 #   command: go get github.com/onsi/gomega
-#   sudo: yes
-#   sudo_user: "{{ user }}"
+#   become: yes
+#   become_user: "{{ user }}"
 
 # - name: Test gh-service
 #   command: ginkgo -r
 #   args:
 #     chdir: "{{ service_dir }}"
-#   sudo: yes
-#   sudo_user: "{{ user }}"
+#   become: yes
+#   become_user: "{{ user }}"

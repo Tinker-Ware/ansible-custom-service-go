@@ -13,4 +13,4 @@ galaxy_info:
   - system
   - github
 dependencies:
-  - { role: golang, sudo: yes }
+  - { role: golang, become: yes }
